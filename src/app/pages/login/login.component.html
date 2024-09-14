@@ -1,0 +1,50 @@
+<section class="min-h-screen flex flex-col bg-gradient-to-r from-cyan-600 to-blue-900">
+  <!-- Contenedor principal -->
+  <div class="flex flex-col items-center justify-center flex-grow p-6">
+    <!-- Logo reducido -->
+    <div class="mb-8">
+      <img src="assets/images/login.png" alt="Logo" class="w-full h-64 object-contain">
+    </div>
+
+    <!-- Contenedor del formulario -->
+    <div class="w-full bg-white rounded-lg shadow-lg p-8 max-w-md">
+      <h1 class="text-2xl font-bold text-center text-gray-900 mb-6">
+        Herramienta para programadores
+      </h1>
+
+      <!-- Formulario de login -->
+      <form (ngSubmit)="onLogin()" class="space-y-6">
+        <!-- Campo de Email -->
+        <div class="relative">
+          <label for="email" class="block mb-2 text-sm font-medium text-gray-700">Email</label>
+          <input type="email" name="email" id="email" [(ngModel)]="email" class="block w-full p-2.5 pl-10 text-sm border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="ejemplo@correo.com" required>
+          <!-- Icono de email -->
+          <div class="absolute inset-y-0 left-0 flex items-center pl-3">
+            <i class="fas fa-envelope text-gray-400"></i>
+          </div>
+        </div>
+
+        <!-- Campo de Contraseña -->
+        <div class="relative">
+          <label for="password" class="block mb-2 text-sm font-medium text-gray-700">Contraseña</label>
+          <input type="password" name="password" id="password" [(ngModel)]="password" class="block w-full p-2.5 pl-10 text-sm border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="" required>
+          <!-- Icono de candado -->
+          <div class="absolute inset-y-0 left-0 flex items-center pl-3">
+            <i class="fas fa-lock text-gray-400"></i>
+          </div>
+        </div>
+
+        <!-- Checkbox de Recuérdame -->
+        <div class="flex items-center">
+          <input id="remember" type="checkbox" class="w-4 h-4 border-gray-300 rounded focus:ring-blue-500">
+          <label for="remember" class="ml-2 text-sm text-gray-500">Recuérdame</label>
+        </div>
+
+        <!-- Botón de Envío -->
+        <button type="submit" class="w-full bg-slate-700 text-white rounded-lg py-3 text-center hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-300 transition-all">
+          Iniciar sesión
+        </button>
+      </form>
+    </div>
+  </div>
+</section>
