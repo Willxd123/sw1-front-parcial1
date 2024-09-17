@@ -1,0 +1,13 @@
+<section class="min-h-screen flex flex-col items-center justify-center bg-gradient-to-r from-cyan-600 to-blue-900">
+  <div class="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
+    <h1 class="text-2xl font-bold text-center mb-6">Sala: {{ roomName }}</h1>
+
+    <div *ngIf="errorMessage" class="text-red-500 text-center">
+      {{ errorMessage }}
+    </div>
+
+    <div *ngIf="!errorMessage" class="text-center">
+      <p>¡Has ingresado a la sala con éxito!</p>
+    </div>
+  </div>
+</section>
