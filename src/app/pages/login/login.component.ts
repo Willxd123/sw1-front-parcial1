@@ -17,13 +17,33 @@ export class LoginComponent {
 
   constructor(private apiService: ApiService, private router: Router) {}
 
-  onLogin(): void {
+  /* onLogin(): void {
     this.apiService.login(this.email, this.password).subscribe({
-      next: () => this.router.navigate(['/access']),
+      next: () => this.router.navigate(['/client']),
       error: (err) => {
         console.error('Error en el login:', err);
         this.errorMessage = 'Email o contraseña incorrectos';
       }
     });
-  }
+  } */
+    onLogin(): void {
+      // Verifica que el email y el password no estén vacíos
+      if (!this.email || !this.password) {
+        this.errorMessage = 'Por favor, ingrese su correo electrónico y contraseña';
+        return;
+      }
+
+      // Llama al servicio de autenticación para iniciar sesión
+      this.apiService.login(this.email, this.password).subscribe({
+        next: () => {
+          // En caso de éxito, redirige al cliente
+          this.router.navigate(['/client']);
+        },
+        error: (err) => {
+          // En caso de error, muestra un mensaje
+          console.error('Error en el login:', err);
+          this.errorMessage = 'Email o contraseña incorrectos';
+        }
+      });
+    }
 }
