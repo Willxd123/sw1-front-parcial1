@@ -19,6 +19,7 @@
     "@angular/platform-browser-dynamic": "^18.0.0",
     "@angular/router": "^18.0.0",
     "examen1-sw-f": "file:",
+    "flowbite": "^2.5.2",
     "gojs": "^3.0.11",
     "ngx-socket-io": "^4.7.0",
     "rxjs": "~7.8.0",
@@ -38,7 +39,7 @@
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
     "postcss": "^8.4.45",
-    "tailwindcss": "^3.4.11",
+    "tailwindcss": "^3.4.13",
     "typescript": "~5.4.2"
   }
 }

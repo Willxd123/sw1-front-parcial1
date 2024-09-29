@@ -1,30 +1,196 @@
-<p>board works!</p>
-<div class="toolbox">
-    <ul>
-      <li (click)="addClass()">Class</li>
-      <!-- Agrega más opciones según tu diagrama -->
-    </ul>
-</div>
+<div class="max-w-7xl mx-auto space-y-4 px-6 py-8 bg-gray-50 rounded-lg shadow-md">
 
-<div>
-    <button (click)="addClass()">Agregar Clase</button>
-    
-    <div>
-      <label for="fromClass">De (Clase):</label>
-      <input type="number" id="fromClass" [(ngModel)]="fromClassId">
-  
-      <label for="toClass">A (Clase):</label>
-      <input type="number" id="toClass" [(ngModel)]="toClassId">
-  
-      <select [(ngModel)]="selectedRelation">
-        <option value="association">Asociación</option>
-        <option value="composition">Composición</option>
-        <option value="aggregation">Agregación</option>
-      </select>
-      <button (click)="addRelation(fromClassId, toClassId, selectedRelation)">Agregar Relación</button>
-    </div>
-    
-    <div #diagramDiv style="width:100%; height:600px; background-color: #f0f0f0;"></div>
+  <!-- Agregar Clase -->
+  <div class="space-y-4 bg-white p-4 rounded-lg shadow-lg">
+    <h3 class="text-base font-medium mb-2 text-gray-800">Agregar Clase</h3>
+    <button
+      class="bg-blue-900 text-white text-sm px-3 py-1 rounded-md hover:bg-blue-500 transition-all shadow"
+      (click)="addClass()">
+      Agregar Clase
+    </button>
   </div>
-  
-  
+
+  <div class="grid grid-cols-2 gap-4">
+
+    <!-- Columna de Atributos -->
+    <div class="space-y-6">
+
+      <!-- Agregar Atributos -->
+      <div class="space-y-4 bg-white p-4 rounded-lg shadow-lg">
+        <h3 class="text-base font-medium mb-2 text-gray-800">Agregar Atributo</h3>
+        <div class="flex items-center space-x-2">
+          <input
+            [(ngModel)]="attributeName"
+            placeholder="Nombre del Atributo"
+            class="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full"/>
+          <select
+            [(ngModel)]="attributeReturnType"
+            class="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            <option value="integer">Integer</option>
+            <option value="string">String</option>
+            <option value="float">Float</option>
+            <option value="boolean">Boolean</option>
+          </select>
+          <button
+            (click)="addAttribute()"
+            class="bg-blue-900 text-white text-sm px-3 py-1 rounded-md hover:bg-blue-500 transition-all shadow">
+            Agregar Atributo
+          </button>
+        </div>
+      </div>
+
+      <!-- Eliminar Atributos -->
+      <div class="space-y-4 bg-white p-4 rounded-lg shadow-lg">
+        <h3 class="text-base font-medium mb-2 text-gray-800">Eliminar Atributo</h3>
+        <div *ngIf="diagram?.selection && diagram.selection.first()?.data?.attributes">
+          <div class="flex items-center space-x-2">
+            <select id="attributeSelect"
+              class="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full"
+              [(ngModel)]="selectedAttribute">
+              <option *ngFor="let attribute of diagram.selection.first()?.data?.attributes" [value]="attribute.name">
+                {{ attribute.name }}
+              </option>
+            </select>
+            <button (click)="removeAttribute(selectedAttribute)"
+              class="bg-red-800 text-white text-sm px-3 py-1 rounded-md hover:bg-red-500 transition-all shadow">
+              Eliminar Atributo
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Columna de Métodos -->
+    <div class="space-y-6">
+
+      <!-- Agregar Métodos -->
+      <div class="space-y-4 bg-white p-4 rounded-lg shadow-lg">
+        <h3 class="text-base font-medium mb-2 text-gray-800">Agregar Método</h3>
+        <div class="flex items-center space-x-2">
+          <input
+            [(ngModel)]="methodName"
+            placeholder="Nombre del Método"
+            class="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full"/>
+          <select
+            [(ngModel)]="methodReturnType"
+            class="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            <option value="void">void</option>
+            <option value="integer">Integer</option>
+            <option value="string">String</option>
+            <option value="float">Float</option>
+          </select>
+          <button
+            (click)="addMethod()"
+            class="bg-blue-900 text-white text-sm px-3 py-1 rounded-md hover:bg-blue-500 transition-all shadow">
+            Agregar Método
+          </button>
+        </div>
+      </div>
+
+      <!-- Eliminar Métodos -->
+      <div class="space-y-4 bg-white p-4 rounded-lg shadow-lg">
+        <h3 class="text-base font-medium mb-2 text-gray-800">Eliminar Método</h3>
+        <div *ngIf="diagram?.selection && diagram.selection.first()?.data?.methods">
+          <div class="flex items-center space-x-2">
+            <select id="methodSelect"
+              class="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full"
+              [(ngModel)]="selectedMethod">
+              <option *ngFor="let method of diagram.selection.first()?.data?.methods" [value]="method.name">
+                {{ method.name }}
+              </option>
+            </select>
+            <button (click)="removeMethod(selectedMethod)"
+              class="bg-red-800 text-white text-sm px-3 py-1 rounded-md hover:bg-red-500 transition-all shadow">
+              Eliminar Método
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contenedor de Relaciones -->
+
+  <div class="space-y-4 bg-white p-4 rounded-lg shadow-lg mt-4">
+    <h3 class="text-base font-medium mb-2 text-gray-800">Relaciones</h3>
+    <div class="grid grid-cols-2 gap-4">
+
+      <!-- Clase origen destino -->
+      <div>
+        <label class="text-sm text-gray-600">Clase de Origen:</label>
+        <select [(ngModel)]="fromClassId" class="border p-2 rounded w-full mb-4">
+          <option *ngFor="let class of classList" [value]="class.key">{{ class.name }}</option>
+        </select>
+
+        <label class="text-sm text-gray-600">Clase de Destino:</label>
+        <select [(ngModel)]="toClassId" class="border p-2 rounded w-full">
+          <option *ngFor="let class of classList" [value]="class.key">{{ class.name }}</option>
+        </select>
+      </div>
+
+      <!-- Multiplicidad -->
+      <div>
+        <label class="text-sm text-gray-600">Multiplicidad Origen:</label>
+        <input
+          [(ngModel)]="multiplicityFrom"
+          placeholder="Ej. 1, *, 0..1"
+          class="border p-2 rounded w-full mb-4" />
+
+        <label class="text-sm text-gray-600">Multiplicidad Destino:</label>
+         <input
+          [(ngModel)]="multiplicityTo"
+          placeholder="Ej. 1, *, 0..1"
+          class="border p-2 rounded w-full" />
+      </div>
+    </div>
+
+    <div class="flex space-x-4 mt-4">
+      <!-- Asociacion -->
+      <button
+        (click)="createAssociation(fromClassId, toClassId, multiplicityFrom, multiplicityTo)"
+        class="bg-green-600 text-white text-sm px-3 py-1 rounded-md hover:bg-green-500 transition-all shadow">
+        Crear Asociacion
+      </button>
+
+      <!-- Asociacion Directa -->
+      <button
+        (click)="createAssociationDirect(fromClassId, toClassId, multiplicityFrom, multiplicityTo)"
+        class="bg-green-600 text-white text-sm px-3 py-1 rounded-md hover:bg-green-500 transition-all shadow">
+        Crear Asociacion Directa
+      </button>
+
+      <!-- Generalizacion -->
+      <button
+        (click)="createGeneralization(fromClassId, toClassId, multiplicityFrom, multiplicityTo)"
+        class="bg-green-600 text-white text-sm px-3 py-1 rounded-md hover:bg-green-500 transition-all shadow">
+        Crear Generalizacion
+      </button>
+
+      <!-- Agregacion -->
+      <button
+        (click)="createAggregation(fromClassId, toClassId, multiplicityFrom, multiplicityTo)"
+        class="bg-green-600 text-white text-sm px-3 py-1 rounded-md hover:bg-green-500 transition-all shadow">
+        Crear Agregacion
+      </button>
+
+      <!-- Composicion -->
+      <button
+        (click)="createComposition(fromClassId, toClassId, multiplicityFrom, multiplicityTo)"
+        class="bg-green-600 text-white text-sm px-3 py-1 rounded-md hover:bg-green-500 transition-all shadow">
+        Crear Composicion
+      </button>
+
+      <!-- Recursion -->
+      <button
+        (click)="createRecursion(fromClassId, fromClassId, multiplicityFrom, multiplicityTo)"
+        class="bg-green-600 text-white text-sm px-3 py-1 rounded-md hover:bg-green-500 transition-all shadow">
+        Crear Recursion
+      </button>
+
+    </div>
+  </div>
+
+  <!-- Contenedor del diagrama -->
+  <div #diagramDiv id="diagramDiv" class="w-full h-[600px] bg-gray-100 rounded-lg shadow-lg mt-4"></div>
+
+</div>
