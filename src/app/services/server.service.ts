@@ -65,7 +65,6 @@ export class ServerService {
     });
   }
 
-  //prueba
   onUsersListUpdate(): Observable<any[]> {
     return new Observable((observer) => {
       this.socket.on('updateUsersList', (users) => {
@@ -73,5 +72,8 @@ export class ServerService {
       });
     });
   }
+
+  //----------------diagrama---------------
+  
 
 }

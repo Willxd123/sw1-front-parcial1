@@ -25,7 +25,7 @@ export class SidebarComponent implements OnInit {
   errorMessage: string = ''; // Para manejar errores
   usersInRoom: any[] = []; // Almacena los usuarios que se unen
   //------------------diagrama------------
-  @Output() addClassEvent = new EventEmitter<void>(); //emite evento de agregar una clase a la sala
+  @Output() addClassEvent = new EventEmitter<void>(); //emite evento de agregar
   //-------------------------------------------
   constructor(
     private route: ActivatedRoute,
@@ -44,7 +44,10 @@ export class SidebarComponent implements OnInit {
     this.serverService.onUsersListUpdate().subscribe((users) => {
       this.usersInRoom = users; // Actualizar la lista de usuarios
     });
+    
   }
+
+
   addClass() {
     this.addClassEvent.emit();
   }
