@@ -33,7 +33,7 @@ export class WelcomeComponent {
 
     this.apiService.createRoom(createRoomDto).subscribe({
       next: (room) => {
-        this.serverService.createRoom(createRoomDto); // Emite el evento de creación de sala vía socket
+      
         this.router.navigate([`/room/${room.code}`]); // Redirige a la sala
       },
       error: (err) => {

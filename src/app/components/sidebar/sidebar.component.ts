@@ -35,7 +35,7 @@ export class SidebarComponent implements OnInit {
 
   ngOnInit(): void {
     this.roomCode = this.route.snapshot.paramMap.get('code') || '';
-    this.serverService.joinRoom(this.roomCode);
+    /* this.serverService.joinRoom(this.roomCode); */
     // Escuchar cuando se une correctamente a la sala y obtener el nombre
     this.serverService.onJoinedRoom().subscribe((room) => {
       this.roomName = room.name; // Asignar el nombre de la sala
@@ -44,7 +44,7 @@ export class SidebarComponent implements OnInit {
     this.serverService.onUsersListUpdate().subscribe((users) => {
       this.usersInRoom = users; // Actualizar la lista de usuarios
     });
-    
+
   }
 
 

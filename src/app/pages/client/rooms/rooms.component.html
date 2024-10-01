@@ -7,6 +7,78 @@
     >
       <app-navegation />
     </nav>
+    <!-- Contenedor de Relaciones -->
+    <button
+      class="middle none font-sans font-bold center transition-all disabled:opacity-50 disabled:shadow-none disabled:pointer-events-none text-xs py-3 rounded-lg text-white hover:bg-white/10 active:bg-white/30 w-full flex items-center gap-4 px-4 capitalize"
+      type="button"
+      (click)="enableAssociationMode()"
+    >
+      <img src="assets/images/asoci.png" alt="" class="w-7" />
+      <p
+        class="block antialiased font-sans text-base leading-relaxed text-inherit font-medium capitalize"
+      >
+        Asociación
+      </p>
+    </button>
+    <button
+      class="middle none font-sans font-bold center transition-all disabled:opacity-50 disabled:shadow-none disabled:pointer-events-none text-xs py-3 rounded-lg text-white hover:bg-white/10 active:bg-white/30 w-full flex items-center gap-4 px-4 capitalize"
+      type="button"
+      (click)="enableDirectAssociationMode()"
+    >
+      <img src="assets/images/agre.png" alt="" class="w-7" />
+      <p
+        class="block antialiased font-sans text-base leading-relaxed text-inherit font-medium capitalize"
+      >
+        Asociación Directa
+      </p>
+    </button>
+    <button
+      class="middle none font-sans font-bold center transition-all disabled:opacity-50 disabled:shadow-none disabled:pointer-events-none text-xs py-3 rounded-lg text-white hover:bg-white/10 active:bg-white/30 w-full flex items-center gap-4 px-4 capitalize"
+      type="button"
+      (click)="enableGeneralizationMode()"
+    >
+      <img src="assets/images/genera.png" alt="" class="w-7" />
+      <p
+        class="block antialiased font-sans text-base leading-relaxed text-inherit font-medium capitalize"
+      >
+        Generalización
+      </p>
+    </button>
+    <button
+      class="middle none font-sans font-bold center transition-all disabled:opacity-50 disabled:shadow-none disabled:pointer-events-none text-xs py-3 rounded-lg text-white hover:bg-white/10 active:bg-white/30 w-full flex items-center gap-4 px-4 capitalize"
+      type="button"
+      (click)="enableAggregationMode()"
+    >
+      <img src="assets/images/agre.png" alt="" class="w-7" />
+      <p
+        class="block antialiased font-sans text-base leading-relaxed text-inherit font-medium capitalize"
+      >
+        Agregación
+      </p>
+    </button>
+    <button
+      class="middle none font-sans font-bold center transition-all disabled:opacity-50 disabled:shadow-none disabled:pointer-events-none text-xs py-3 rounded-lg text-white hover:bg-white/10 active:bg-white/30 w-full flex items-center gap-4 px-4 capitalize"
+      type="button"
+      (click)="enableCompositionMode()"
+    >
+      <img src="assets/images/compo.png" alt="" class="w-7" />
+      <p
+        class="block antialiased font-sans text-base leading-relaxed text-inherit font-medium capitalize"
+      >
+        Composición
+      </p>
+    </button>
+    <button
+  class="middle none font-sans font-bold center transition-all disabled:opacity-50 disabled:shadow-none disabled:pointer-events-none text-xs py-3 rounded-lg text-white hover:bg-white/10 active:bg-white/30 w-full flex items-center gap-4 px-4 capitalize"
+  type="button"
+  (click)="enableDependencyMode()"
+>
+  <img src="assets/images/depen.png" alt="" class="w-7" />
+  <p class="block antialiased font-sans text-base leading-relaxed text-inherit font-medium capitalize">
+    Dependencia
+  </p>
+</button>
+
     <div class="mt-4">
       <div class="card" #diagramDiv id="diagramDiv">
         <!-- Contenedor del diagrama -->
@@ -22,9 +94,8 @@
           <h1
             class="block antialiased tracking-normal font-sans text-base font-semibold leading-relaxed text-white"
           >
-          {{ selectedClass?.name || 'Selecciona una clase' }}
+            {{ selectedClass?.name || "Selecciona una clase" }}
           </h1>
-
         </div>
       </div>
 
@@ -127,7 +198,9 @@
           </button>
           <div class="relative overflow-x-auto shadow-slate-100">
             <div
-            *ngIf="diagram?.selection && diagram.selection.first()?.data?.methods"
+              *ngIf="
+                diagram?.selection && diagram.selection.first()?.data?.methods
+              "
               class="space-y-2"
             >
               <div class="flex items-center space-x-2">
@@ -141,10 +214,12 @@
                     Seleccionar atributo
                   </option>
                   <option
-                  *ngFor="let method of diagram.selection.first()?.data?.methods"
-                  [value]="method.name"
+                    *ngFor="
+                      let method of diagram.selection.first()?.data?.methods
+                    "
+                    [value]="method.name"
                   >
-                  {{ method.name }}
+                    {{ method.name }}
                   </option>
                 </select>
               </div>
@@ -155,6 +230,17 @@
                 Eliminar Atributo
               </button>
             </div>
+          </div>
+        </li>
+        <li>
+          <div *ngIf="selectedClass" class="bg-gray-200 p-4 rounded-lg shadow">
+            <h2 class="font-semibold text-gray-800">Detalles de la Clase</h2>
+            <p>
+              left: {{ selectedClassLocation?.left }}, top:
+              {{ selectedClassLocation?.top }}
+            </p>
+            <p>width: {{ selectedClassSize?.width }}</p>
+            <p>height: {{ selectedClassSize?.height }}</p>
           </div>
         </li>
       </ul>
