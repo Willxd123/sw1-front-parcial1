@@ -7,7 +7,6 @@ import { tap, catchError } from 'rxjs/operators';
 interface LoginResponse {
   token: string;
 }
-
 @Injectable({
   providedIn: 'root',
 })
@@ -16,7 +15,20 @@ export class ApiService {
   tokenKey = 'authToken';
 
   constructor(private http: HttpClient, private router: Router) {}
-
+  // Método para registrar un nuevo usuario
+  register(name: string, email: string, password: string): Observable<any> {
+    return this.http
+      .post(`${this.apiUrl}/auth/register`, { name, email, password })
+      .pipe(
+        tap((response) => {
+          console.log('Usuario registrado:', response);
+        }),
+        catchError((err) => {
+          console.error('Error en el registro:', err);
+          throw err;
+        })
+      );
+  }
   login(email: string, password: string): Observable<LoginResponse> {
     return this.http
       .post<LoginResponse>(`${this.apiUrl}/auth/login`, { email, password }) // Cambia 'username' por 'email'
@@ -73,12 +85,13 @@ export class ApiService {
   }
 
   // Obtener salas del usuario autenticado
-  getRooms(): Observable<any[]> {
+  // Obtener salas del usuario autenticado
+  getUserRooms(): Observable<any[]> {
     const headers = new HttpHeaders().set(
       'Authorization',
       `Bearer ${this.getToken()}`
     );
-    return this.http.get<any[]>(`${this.apiUrl}/rooms`, { headers });
+    return this.http.get<any[]>(`${this.apiUrl}/rooms/user-rooms`, { headers });
   }
 
   // Método para unirse a una sala por código (es probable que sea un POST)

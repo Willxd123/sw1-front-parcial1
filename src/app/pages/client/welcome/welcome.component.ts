@@ -10,7 +10,6 @@ import { ServerService } from '../../../services/server.service';
   imports: [RouterOutlet, FormsModule],
   providers: [ApiService], // Añadir FormsModule aquí
   templateUrl: './welcome.component.html',
-  styleUrls: ['./welcome.component.css'],
 })
 export class WelcomeComponent {
   joinErrorMessage: string = '';
@@ -33,7 +32,7 @@ export class WelcomeComponent {
 
     this.apiService.createRoom(createRoomDto).subscribe({
       next: (room) => {
-        this.serverService.createRoom(createRoomDto); // Emite el evento de creación de sala vía socket
+
         this.router.navigate([`/room/${room.code}`]); // Redirige a la sala
       },
       error: (err) => {
@@ -60,8 +59,5 @@ export class WelcomeComponent {
       }
     });
   }
-  /* joinRoom() {
-    this.serverService.joinRoom(this.roomCode); // Solo navega al room, sin suscripción
-    this.router.navigate([`/room/${this.roomCode}`]); // Redirige a la sala
-  } */
+
 }

@@ -11,7 +11,6 @@ import { CommonModule } from '@angular/common';
   imports: [
     RouterModule,
     FormsModule,
-    RouterModule,
     RoomsComponent,
     CommonModule,
   ],
@@ -25,7 +24,15 @@ export class SidebarComponent implements OnInit {
   errorMessage: string = ''; // Para manejar errores
   usersInRoom: any[] = []; // Almacena los usuarios que se unen
   //------------------diagrama------------
-  @Output() addClassEvent = new EventEmitter<void>(); //emite evento de agregar una clase a la sala
+  @Output() addClassEvent = new EventEmitter<void>();
+  @Output() asociacionEvent = new EventEmitter<void>();
+  @Output() asociacionDirectaEvent = new EventEmitter<void>();
+  @Output() generalizacionEvent = new EventEmitter<void>();
+  @Output() agregacionEvent = new EventEmitter<void>();
+  @Output() composicionEvent = new EventEmitter<void>();
+  @Output() dependenciaEvent = new EventEmitter<void>();
+  @Output() muchosamuchosEvent = new EventEmitter<void>();
+
   //-------------------------------------------
   constructor(
     private route: ActivatedRoute,
@@ -35,7 +42,7 @@ export class SidebarComponent implements OnInit {
 
   ngOnInit(): void {
     this.roomCode = this.route.snapshot.paramMap.get('code') || '';
-    this.serverService.joinRoom(this.roomCode);
+    /* this.serverService.joinRoom(this.roomCode); */
     // Escuchar cuando se une correctamente a la sala y obtener el nombre
     this.serverService.onJoinedRoom().subscribe((room) => {
       this.roomName = room.name; // Asignar el nombre de la sala
@@ -44,8 +51,30 @@ export class SidebarComponent implements OnInit {
     this.serverService.onUsersListUpdate().subscribe((users) => {
       this.usersInRoom = users; // Actualizar la lista de usuarios
     });
+
   }
   addClass() {
     this.addClassEvent.emit();
+  }
+  asociacion(){
+    this.asociacionEvent.emit();
+  }
+  asociacionDirecta(){
+    this.asociacionDirectaEvent.emit();
+  }
+  generalizacion(){
+    this.generalizacionEvent.emit();
+  }
+  agregacion(){
+    this.agregacionEvent.emit();
+  }
+  composicion(){
+    this.composicionEvent.emit();
+  }
+  dependencia(){
+    this.dependenciaEvent.emit();
+  }
+  muchosamuchos(){
+    this.muchosamuchosEvent.emit();
   }
 }
