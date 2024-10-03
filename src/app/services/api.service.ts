@@ -11,7 +11,7 @@ interface LoginResponse {
   providedIn: 'root',
 })
 export class ApiService {
-  apiUrl: string = 'http://localhost:3000/api';
+  apiUrl: string = 'https://back-sw1-parcial-1.onrender.com/api';
   tokenKey = 'authToken';
 
   constructor(private http: HttpClient, private router: Router) {}
