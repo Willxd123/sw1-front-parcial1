@@ -17,15 +17,13 @@
       <app-navegation />
     </nav>
     <!-- Contenedor de Relaciones -->
-    <div>
-      <!-- Botón para exportar el diagrama actual -->
-      <button (click)="exportDiagramAsXML()">Exportar Diagrama</button>
+    <div class="controls">
+      <!-- Botón para guardar el diagrama -->
+      <button (click)="guardarDiagrama()">Guardar Diagrama</button>
 
-      <!-- Botón para importar un diagrama -->
-      <input type="file" #fileInput (change)="importDiagramFromXML($event)" style="display: none;" />
-      <button (click)="triggerFileInput()">Importar Diagrama</button>
+      <!-- Botón para cargar el diagrama -->
+      <button (click)="cargarDiagrama()">Cargar Diagrama</button>
     </div>
-
     <div class="mt-4">
       <div class="card" #diagramDiv id="diagramDiv">
         <!-- Contenedor del diagrama -->
@@ -36,6 +34,17 @@
     class="bg-graygreen-1100 z-40 w-[400px] h-screen transition-transform -translate-x-full sm:translate-x-0"
   >
     <div class="h-full px-3 pb-4 overflow-y-auto space-y-4">
+      <div class="relative border-b">
+        <div class="flex flex-col items-start py-2 px-8">
+          <h1
+            class="block antialiased tracking-normal font-sans text-base font-semibold leading-relaxed text-white"
+          >
+            {{ selectedClass?.name || "Selecciona una clase" }}
+          </h1>
+
+        </div>
+      </div>
+
       <ul class="mb-8 flex flex-col gap-1">
         <li class="space-y-4 border-b">
           <div class="flex items-center px-2">

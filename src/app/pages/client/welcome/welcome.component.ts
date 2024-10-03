@@ -10,7 +10,6 @@ import { ServerService } from '../../../services/server.service';
   imports: [RouterOutlet, FormsModule],
   providers: [ApiService], // Añadir FormsModule aquí
   templateUrl: './welcome.component.html',
-  styleUrls: ['./welcome.component.css'],
 })
 export class WelcomeComponent {
   joinErrorMessage: string = '';

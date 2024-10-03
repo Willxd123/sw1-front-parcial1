@@ -114,6 +114,20 @@ export class ServerService {
       });
     });
   }
+  // Emitir el evento para actualizar un atributo
+  emitUpdateAttribute(attributeData: any) {
+    this.socket.emit('updateAttributeText', attributeData);
+  }
+
+  // Escuchar cuando se actualiza un atributo
+  onAttributeUpdated(): Observable<any> {
+    return new Observable((observer) => {
+      this.socket.on('attributeUpdated', (updateData) => {
+        observer.next(updateData);
+      });
+    });
+  }
+
   //-----------------eliminar atributo---------------
   // Emitir la eliminación de un atributo al servidor (nuevo)
   emitRemoveAttribute(attributeData: any) {
@@ -202,19 +216,5 @@ export class ServerService {
       });
     });
   }
-
-// Emitir la acción de guardar el diagrama
-emitSaveDiagram(saveData: any) {
-  this.socket.emit('saveDiagram', saveData);
-}
-
-// Escuchar la confirmación de que el diagrama ha sido guardado (opcional)
-onDiagramSaved(): Observable<any> {
-  return new Observable((observer) => {
-    this.socket.on('diagramSaved', (response) => {
-      observer.next(response);
-    });
-  });
-}
 
 }

@@ -398,7 +398,7 @@ export class RoomsComponent implements OnInit {
                   margin: new go.Margin(5, 0, 5, 0),
                   editable: true,
                 },
-                new go.Binding('text', 'attribute').makeTwoWay()
+                new go.Binding('text', 'name').makeTwoWay()
               )
             ),
           }
@@ -624,7 +624,7 @@ export class RoomsComponent implements OnInit {
       this.serverService.emitAddMethod({
         roomCode: this.roomCode,
         classKey: classData.key,
-        methodName: this.methodName,
+        methodName: this.methodName+'()',
         methodReturnType: this.methodReturnType,
       });
 
@@ -815,8 +815,8 @@ export class RoomsComponent implements OnInit {
       this.createAssociationDirect(
         this.firstSelectedNode.data.key.toString(),
         secondSelectedNode.data.key.toString(),
-        '1', // Multiplicidad desde la clase de origen
-        '1' // Multiplicidad desde la clase de destino
+        '', // Multiplicidad desde la clase de origen
+        '' // Multiplicidad desde la clase de destino
       );
 
       // Reiniciar el modo de asociación directa
@@ -838,8 +838,8 @@ export class RoomsComponent implements OnInit {
       this.createRelationship(
         fromClassId,
         toClassId,
-        '1',
-        '1',
+        '',
+        '',
         'AssociationDirect', // Tipo de relación
         'OpenTriangle', // Flecha de agregación
         '', // Relleno del diamante transparente
@@ -931,8 +931,8 @@ export class RoomsComponent implements OnInit {
       this.createAggregation(
         this.firstSelectedNode.data.key.toString(),
         secondSelectedNode.data.key.toString(),
-        '1', // Multiplicidad desde la clase de origen
-        '1' // Multiplicidad desde la clase de destino
+        '', // Multiplicidad desde la clase de origen
+        '' // Multiplicidad desde la clase de destino
       );
 
       // Reiniciar el modo de agregación
@@ -1151,8 +1151,8 @@ export class RoomsComponent implements OnInit {
         routing: go.Routing.Orthogonal,
         text: 'ManyToMany',
         toArrow: 'OpenTriangle',
-        multiplicityFrom: multiplicityFrom || '1',
-        multiplicityTo: 'n',
+        multiplicityFrom: multiplicityFrom || '',
+        multiplicityTo: '',
         relationType: 'ManyToMany',
       };
 
@@ -1162,8 +1162,8 @@ export class RoomsComponent implements OnInit {
         routing: go.Routing.Orthogonal,
         text: 'ManyToMany',
         toArrow: 'OpenTriangle',
-        multiplicityFrom: multiplicityFrom || '1',
-        multiplicityTo: 'n',
+        multiplicityFrom: multiplicityFrom || '',
+        multiplicityTo: '',
         relationType: 'ManyToMany',
       };
 
@@ -1184,140 +1184,41 @@ export class RoomsComponent implements OnInit {
     }
   }
   //-------------------------------------------------------------------------------------------------
+  guardarDiagrama() {
+    const diagramJson = this.diagram.model.toJson();
+    const token = localStorage.getItem('authToken');
 
-  exportDiagramAsXML() {
-    // Obtener el estado actual del diagrama como JSON
-    const diagramJSON = this.diagram.model.toJson();
-
-    // Convertir el JSON a XML
-    const xml = this.convertJSONToXML(JSON.parse(diagramJSON));
-
-    // Crear un Blob para el XML
-    const blob = new Blob([xml], { type: 'application/xml' });
-
-    // Crear un enlace de descarga
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'diagram.xml';
-
-    // Simular clic en el enlace para iniciar la descarga
-    link.click();
+    fetch(`http://localhost:3000/api/room-user/save/${this.roomCode}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ diagramData: diagramJson })
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log('Diagrama guardado con éxito:', data);
+    })
+    .catch(error => console.error('Error al guardar el diagrama:', error));
   }
+  cargarDiagrama() {
+    const token = localStorage.getItem('authToken');
 
-  convertJSONToXML(json: any) {
-    let xml = '<diagram>\n';
-
-    // Recorrer nodos (clases)
-    if (json.nodeDataArray) {
-      xml += '<nodes>\n';
-      json.nodeDataArray.forEach((node: any) => {
-        xml += `  <node id="${node.key}" name="${node.name}" location="${node.location.x},${node.location.y}">\n`;
-        xml += '    <attributes>\n';
-        (node.attributes || []).forEach((attr: any) => {
-          xml += `      <attribute name="${attr.name}" />\n`;
-        });
-        xml += '    </attributes>\n';
-        xml += '    <methods>\n';
-        (node.methods || []).forEach((method: any) => {
-          xml += `      <method name="${method.name}" />\n`;
-        });
-        xml += '    </methods>\n';
-        xml += '  </node>\n';
-      });
-      xml += '</nodes>\n';
-    }
-
-    // Recorrer enlaces (relaciones)
-    if (json.linkDataArray) {
-      xml += '<links>\n';
-      json.linkDataArray.forEach((link: any) => {
-        xml += `  <link from="${link.from}" to="${link.to}" type="${link.relationType}" />\n`;
-      });
-      xml += '</links>\n';
-    }
-
-    xml += '</diagram>';
-    return xml;
-  }
-
-  importDiagramFromXML(event: any) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      const xml = reader.result as string;
-
-      // Convertir el XML a JSON
-      const json = this.convertXMLToJSON(xml);
-
-      // Cargar el JSON en el modelo del diagrama
-      const model = go.Model.fromJson(JSON.stringify(json));
-      this.diagram.model = model;
-
-      // Emitir el evento de sincronización con el servidor si es necesario
-      this.serverService.emitSaveDiagram({
-        roomCode: this.roomCode,
-        diagramData: JSON.stringify(json),
-      });
-    };
-    reader.readAsText(file);
-  }
-
-  convertXMLToJSON(xml: string): any {
-    const parser = new DOMParser();
-    const xmlDoc = parser.parseFromString(xml, 'application/xml');
-
-    const json: any = {
-      nodeDataArray: [],
-      linkDataArray: [],
-    };
-
-    // Convertir nodos
-    const nodes = xmlDoc.getElementsByTagName('node');
-    for (const node of Array.from(nodes)) {
-      const attributes: any[] = [];
-      const methods: any[] = [];
-
-      const attrElements = node.getElementsByTagName('attribute');
-      for (const attr of Array.from(attrElements)) {
-        attributes.push({ name: attr.getAttribute('name') });
+    fetch(`http://localhost:3000/api/room-user/diagram/${this.roomCode}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
       }
-
-      const methodElements = node.getElementsByTagName('method');
-      for (const method of Array.from(methodElements)) {
-        methods.push({ name: method.getAttribute('name') });
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data) {
+        this.diagram.model = go.Model.fromJson(data.diagramData);  // Cargar el diagrama desde el JSON
       }
-
-      const location = node.getAttribute('location')?.split(',');
-      const point =
-        location && location.length === 2
-          ? new go.Point(parseFloat(location[0]), parseFloat(location[1]))
-          : new go.Point(0, 0); // Si no hay ubicación, usar (0, 0) como valor por defecto.
-
-      json.nodeDataArray.push({
-        key: node.getAttribute('id'),
-        name: node.getAttribute('name'),
-        attributes: attributes,
-        methods: methods,
-        location: point, // Usamos el punto calculado o un valor por defecto
-      });
-    }
-
-    // Convertir enlaces
-    const links = xmlDoc.getElementsByTagName('link');
-    for (const link of Array.from(links)) {
-      json.linkDataArray.push({
-        from: link.getAttribute('from'),
-        to: link.getAttribute('to'),
-        relationType: link.getAttribute('type'),
-      });
-    }
-
-    return json;
+    })
+    .catch(error => console.error('Error al cargar el diagrama:', error));
   }
 
-  triggerFileInput() {
-    this.fileInput.nativeElement.click();
-  }
+
 }

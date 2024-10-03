@@ -85,12 +85,13 @@ export class ApiService {
   }
 
   // Obtener salas del usuario autenticado
-  getRooms(): Observable<any[]> {
+  // Obtener salas del usuario autenticado
+  getUserRooms(): Observable<any[]> {
     const headers = new HttpHeaders().set(
       'Authorization',
       `Bearer ${this.getToken()}`
     );
-    return this.http.get<any[]>(`${this.apiUrl}/rooms`, { headers });
+    return this.http.get<any[]>(`${this.apiUrl}/rooms/user-rooms`, { headers });
   }
 
   // Método para unirse a una sala por código (es probable que sea un POST)
