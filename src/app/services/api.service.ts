@@ -7,7 +7,6 @@ import { tap, catchError } from 'rxjs/operators';
 interface LoginResponse {
   token: string;
 }
-
 @Injectable({
   providedIn: 'root',
 })
@@ -16,7 +15,20 @@ export class ApiService {
   tokenKey = 'authToken';
 
   constructor(private http: HttpClient, private router: Router) {}
-
+  // Método para registrar un nuevo usuario
+  register(name: string, email: string, password: string): Observable<any> {
+    return this.http
+      .post(`${this.apiUrl}/auth/register`, { name, email, password })
+      .pipe(
+        tap((response) => {
+          console.log('Usuario registrado:', response);
+        }),
+        catchError((err) => {
+          console.error('Error en el registro:', err);
+          throw err;
+        })
+      );
+  }
   login(email: string, password: string): Observable<LoginResponse> {
     return this.http
       .post<LoginResponse>(`${this.apiUrl}/auth/login`, { email, password }) // Cambia 'username' por 'email'

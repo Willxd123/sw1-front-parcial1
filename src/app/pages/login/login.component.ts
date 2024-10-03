@@ -1,14 +1,14 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, RouterModule],
   templateUrl: './login.component.html',
-  styleUrls: ['./login.component.css']
+
 })
 export class LoginComponent {
   email: string = '';  // Cambia 'username' por 'email'
@@ -17,15 +17,6 @@ export class LoginComponent {
 
   constructor(private apiService: ApiService, private router: Router) {}
 
-  /* onLogin(): void {
-    this.apiService.login(this.email, this.password).subscribe({
-      next: () => this.router.navigate(['/client']),
-      error: (err) => {
-        console.error('Error en el login:', err);
-        this.errorMessage = 'Email o contraseña incorrectos';
-      }
-    });
-  } */
     onLogin(): void {
       // Verifica que el email y el password no estén vacíos
       if (!this.email || !this.password) {

@@ -11,7 +11,6 @@ import { CommonModule } from '@angular/common';
   imports: [
     RouterModule,
     FormsModule,
-    RouterModule,
     RoomsComponent,
     CommonModule,
   ],
@@ -25,7 +24,15 @@ export class SidebarComponent implements OnInit {
   errorMessage: string = ''; // Para manejar errores
   usersInRoom: any[] = []; // Almacena los usuarios que se unen
   //------------------diagrama------------
-  @Output() addClassEvent = new EventEmitter<void>(); //emite evento de agregar
+  @Output() addClassEvent = new EventEmitter<void>();
+  @Output() asociacionEvent = new EventEmitter<void>();
+  @Output() asociacionDirectaEvent = new EventEmitter<void>();
+  @Output() generalizacionEvent = new EventEmitter<void>();
+  @Output() agregacionEvent = new EventEmitter<void>();
+  @Output() composicionEvent = new EventEmitter<void>();
+  @Output() dependenciaEvent = new EventEmitter<void>();
+  @Output() muchosamuchosEvent = new EventEmitter<void>();
+
   //-------------------------------------------
   constructor(
     private route: ActivatedRoute,
@@ -46,9 +53,28 @@ export class SidebarComponent implements OnInit {
     });
 
   }
-
-
   addClass() {
     this.addClassEvent.emit();
+  }
+  asociacion(){
+    this.asociacionEvent.emit();
+  }
+  asociacionDirecta(){
+    this.asociacionDirectaEvent.emit();
+  }
+  generalizacion(){
+    this.generalizacionEvent.emit();
+  }
+  agregacion(){
+    this.agregacionEvent.emit();
+  }
+  composicion(){
+    this.composicionEvent.emit();
+  }
+  dependencia(){
+    this.dependenciaEvent.emit();
+  }
+  muchosamuchos(){
+    this.muchosamuchosEvent.emit();
   }
 }

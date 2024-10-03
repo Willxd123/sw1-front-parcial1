@@ -181,6 +181,40 @@ export class ServerService {
       });
     });
   }
+  emitCreateRelationship(relationshipData: any) {
+    this.socket.emit('createRelationship', relationshipData);
+  }
+  onRelationshipCreated(): Observable<any> {
+    return new Observable((observer) => {
+      this.socket.on('relationshipCreated', (linkData) => {
+        observer.next(linkData);
+      });
+    });
+  }
+  emitCreateManyToMany(data: any) {
+    this.socket.emit('createManyToMany', data);
+  }
 
+  onManyToManyCreated(): Observable<any> {
+    return new Observable((observer) => {
+      this.socket.on('manyToManyCreated', (data) => {
+        observer.next(data);
+      });
+    });
+  }
+
+// Emitir la acción de guardar el diagrama
+emitSaveDiagram(saveData: any) {
+  this.socket.emit('saveDiagram', saveData);
+}
+
+// Escuchar la confirmación de que el diagrama ha sido guardado (opcional)
+onDiagramSaved(): Observable<any> {
+  return new Observable((observer) => {
+    this.socket.on('diagramSaved', (response) => {
+      observer.next(response);
+    });
+  });
+}
 
 }

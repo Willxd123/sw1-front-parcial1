@@ -12,7 +12,6 @@ import { FormsModule } from '@angular/forms';
 import * as go from 'gojs';
 import { SidebarComponent } from '../../../components/sidebar/sidebar.component';
 import { NavegationComponent } from '../../../components/navegation/navegation.component';
-
 @Component({
   selector: 'app-rooms',
   standalone: true,
@@ -26,11 +25,17 @@ import { NavegationComponent } from '../../../components/navegation/navegation.c
   templateUrl: './rooms.component.html',
 })
 export class RoomsComponent implements OnInit {
+  @ViewChild('fileInput') fileInput!: ElementRef;
   roomCode: string = ''; // Código de la sala que obtenemos de la URL
   roomName: string = ''; // Nombre de la sala que obtenemos del backend
   roomId: number = 0; // ID de la sala, obtenido al unirse
   errorMessage: string = ''; // Para manejar errores
   usersInRoom: any[] = []; // Almacena los usuarios que se unen
+  // Propiedades para la multiplicidad y etiqueta de enlace
+  currentMultiplicityFrom: string = '';
+  currentMultiplicityTo: string = '';
+  currentLabelText: string = '';
+
   //-----------------------------diagramas------------------------------
   @ViewChild('diagramDiv', { static: true }) diagramDiv!: ElementRef;
   public diagram!: go.Diagram;
@@ -45,6 +50,9 @@ export class RoomsComponent implements OnInit {
   isAggregationMode = false;
   isCompositionMode = false;
   isDependencyMode = false;
+  isManyToManyMode: boolean = false; // Modo muchos a muchos
+
+  secondSelectedNode: go.Node | null = null; // Segundo nodo seleccionado
   //-----------
   attributeName: string = ''; // Nombre del atributo select
   methodName: string = ''; // Nombre del método select
@@ -75,7 +83,16 @@ export class RoomsComponent implements OnInit {
     private cdr: ChangeDetectorRef,
     private activatedRoute: ActivatedRoute
   ) {}
-
+  // Método para actualizar las propiedades de multiplicidad y etiqueta de enlace
+  updateLinkInfo(
+    multiplicityFrom: string,
+    multiplicityTo: string,
+    labelText: string
+  ) {
+    this.currentMultiplicityFrom = multiplicityFrom;
+    this.currentMultiplicityTo = multiplicityTo;
+    this.currentLabelText = labelText;
+  }
   ngOnInit(): void {
     //oyente de nuevo usuario conectado
     this.roomCode = this.route.snapshot.paramMap.get('code') || '';
@@ -116,7 +133,32 @@ export class RoomsComponent implements OnInit {
       if (this.isDependencyMode && part instanceof go.Node) {
         this.handleDependencyNodeClick(part);
       }
+      //muvhos amuchos
+      if (this.isManyToManyMode && part instanceof go.Node) {
+        this.handleManyToManyNodeClick(part);
+      }
     });
+    this.serverService.onRelationshipCreated().subscribe((linkData: any) => {
+      const model = this.diagram.model as go.GraphLinksModel;
+      model.addLinkData(linkData); // Añadir el enlace al diagrama
+      console.log(
+        `Enlace de tipo ${linkData.relationType} recibido:`,
+        linkData
+      );
+    });
+    this.serverService.onManyToManyCreated().subscribe((data: any) => {
+      const model = this.diagram.model as go.GraphLinksModel;
+
+      // Añadir el nodo intermedio al diagrama
+      model.addNodeData(data.intermediateClass);
+
+      // Añadir los enlaces de la relación "muchos a muchos" al diagrama
+      model.addLinkData(data.fromIntermediateLinkData);
+      model.addLinkData(data.toIntermediateLinkData);
+
+      console.log('Relación muchos a muchos recibida y actualizada:', data);
+    });
+
     // Escuchar cuando se agregue una clase y actualizar el diagrama
     this.serverService.onClassAdded().subscribe((newClass) => {
       console.log('Clase recibida en el front-end:', newClass); // Verifica la recepción
@@ -162,7 +204,6 @@ export class RoomsComponent implements OnInit {
       if (editedNode && editedNode.data) {
         const updatedName = e.subject.text;
         const classKey = editedNode.data.key;
-
         // Emitir el evento al servidor
         this.serverService.emitClassNameUpdate({
           roomCode: this.roomCode,
@@ -173,6 +214,7 @@ export class RoomsComponent implements OnInit {
         });
       }
     });
+    // Escuchar cuando se actualiza el nomnre de la clase
     this.serverService.onClassNameUpdated().subscribe((updatedClassData) => {
       const classNode = this.diagram.findNodeForKey(updatedClassData.key);
       if (classNode) {
@@ -278,10 +320,13 @@ export class RoomsComponent implements OnInit {
 
     //eliminar clase
     // Listener para detectar cuando se elimina un nodo con Backspace o Suprimir
+    // Listener para detectar cuando se elimina un nodo o un enlace
     this.diagram.addDiagramListener('SelectionDeleted', (e) => {
-      const deletedNode = e.subject.first(); // Nodo que ha sido eliminado
-      if (deletedNode && deletedNode.data) {
-        const classKey = deletedNode.data.key;
+      const deletedPart = e.subject.first(); // Nodo o enlace que ha sido eliminado
+
+      // Si es un nodo, eliminamos la clase
+      if (deletedPart instanceof go.Node && deletedPart.data) {
+        const classKey = deletedPart.data.key;
 
         // Emitir el evento al servidor
         this.serverService.emitDeleteClass({
@@ -298,6 +343,7 @@ export class RoomsComponent implements OnInit {
       }
     });
   }
+
   //Inicializar el diagrama
   initializeDiagram() {
     this.diagram.nodeTemplate = go.GraphObject.make(
@@ -325,12 +371,17 @@ export class RoomsComponent implements OnInit {
           new go.Binding('text', 'name').makeTwoWay()
         ),
 
-        go.GraphObject.make(go.Shape, 'LineH', {
-          strokeWidth: 1,
-          maxSize: new go.Size(NaN, 10),
-        },new go.Binding('dashArray', 'relationType', (relationType) => {
-          return relationType === 'Dependency' ? [5, 5] : null; // Solo para dependencia
-        })), // Línea horizontal para separar
+        go.GraphObject.make(
+          go.Shape,
+          'LineH',
+          {
+            strokeWidth: 1,
+            maxSize: new go.Size(NaN, 10),
+          },
+          new go.Binding('dashArray', 'relationType', (relationType) => {
+            return relationType === 'Dependency' ? [5, 5] : null; // Solo para dependencia
+          })
+        ), // Línea horizontal para separar
 
         // Panel para atributos
         go.GraphObject.make(
@@ -347,7 +398,7 @@ export class RoomsComponent implements OnInit {
                   margin: new go.Margin(5, 0, 5, 0),
                   editable: true,
                 },
-                new go.Binding('text', 'name').makeTwoWay()
+                new go.Binding('text', 'attribute').makeTwoWay()
               )
             ),
           }
@@ -388,6 +439,7 @@ export class RoomsComponent implements OnInit {
     );
 
     // Configurar el template de los enlaces
+    // Configurar el template de los enlaces
     this.diagram.linkTemplate = go.GraphObject.make(
       go.Link,
       {
@@ -398,15 +450,19 @@ export class RoomsComponent implements OnInit {
         reshapable: true, // Permite modificar la forma del enlace
         resegmentable: true, // Permite ajustar los segmentos del enlace
       },
-      go.GraphObject.make(go.Shape, { stroke: 'black', strokeWidth: 1 }), // Línea del enlace
-
+      go.GraphObject.make(
+        go.Shape,
+        { stroke: 'black', strokeWidth: 1 }, // Línea del enlace
+        new go.Binding('strokeDashArray', 'relationType', (relationType) => {
+          return relationType === 'Dependency' ? [6, 3] : null; // Linea entrecortada solo para dependencia
+        })
+      ),
       // Flecha destino y su relleno
       go.GraphObject.make(
         go.Shape,
         new go.Binding('toArrow', 'toArrow'),
         new go.Binding('fill', 'fill')
       ),
-
       // Multiplicidad del origen editable
       go.GraphObject.make(
         go.TextBlock,
@@ -426,9 +482,9 @@ export class RoomsComponent implements OnInit {
           editable: true,
           alignmentFocus: go.Spot.Center, // Asegura que el texto esté centrado
         },
-        new go.Binding('text', 'relationType').makeTwoWay() // Editable relationType
+        new go.Binding('text', 'text').makeTwoWay() // texto del enlace
       ),
-
+      // Multiplicidad destino editable
       go.GraphObject.make(
         go.TextBlock,
         {
@@ -657,6 +713,38 @@ export class RoomsComponent implements OnInit {
     console.log('To Class ID:', toClassId);
 
     if (fromClassId && toClassId) {
+      // Utilizamos el método centralizado para manejar la agregación
+      this.createRelationship(
+        fromClassId,
+        toClassId,
+        '1',
+        '1',
+        'Association', // Tipo de relación
+        '', // Flecha de agregación
+        '', // Relleno del diamante transparente
+        'Asociacion' // Etiqueta visible para el enlace
+      );
+    } else {
+      alert('Por favor, seleccione las clases de origen y destino.');
+    }
+  }
+
+  //---------------------------
+  createRelationship(
+    fromClassId: string | null,
+    toClassId: string | null,
+    multiplicityFrom: string,
+    multiplicityTo: string,
+    relationType: string, // Tipo de relación: Asociación, Agregación, Generalización, etc.
+    toArrow: string, // Flecha específica según el tipo de relación
+    fill: string = 'black', // Color de relleno de la flecha, por defecto 'black'
+    labelText: string = '', // Etiqueta del enlace (texto visible)
+    strokeDashArray: number[] = [] // Para dependencia o relaciones con líneas discontinuas
+  ): void {
+    console.log('From Class ID:', fromClassId);
+    console.log('To Class ID:', toClassId);
+    this.updateLinkInfo(multiplicityFrom, multiplicityTo, labelText);
+    if (fromClassId && toClassId) {
       const fromNode = this.diagram.findNodeForKey(Number(fromClassId));
       const toNode = this.diagram.findNodeForKey(Number(toClassId));
 
@@ -672,20 +760,31 @@ export class RoomsComponent implements OnInit {
           fromPort: `${fromPortPos.x},${fromPortPos.y}`,
           toPort: `${toPortPos.x},${toPortPos.y}`,
           routing: go.Routing.Orthogonal,
-          text: 'Asociación', // Etiqueta del enlace
+          text: labelText, // Etiqueta del enlace visible
           multiplicityFrom: multiplicityFrom || '',
           multiplicityTo: multiplicityTo || '',
-          toArrow: '',
-          relationType: 'Association',
+          toArrow: toArrow, // Flecha específica para la relación
+          fill: fill, // Relleno de la flecha
+          relationType: relationType, // Tipo de relación (para exportar)
+          strokeDashArray: strokeDashArray.length ? strokeDashArray : null, // Solo si hay valores para dependencia
+        };
+        this.diagram.model.setDataProperty(
+          linkData,
+          'multiplicityFrom',
+          multiplicityFrom
+        );
+        this.diagram.model.setDataProperty(
+          linkData,
+          'multiplicityTo',
+          multiplicityTo
+        );
+        // Emitir el evento de creación de relación al servidor
+        const relationshipData = {
+          roomCode: this.roomCode,
+          linkData: linkData,
         };
 
-        const model = this.diagram.model as go.GraphLinksModel;
-        try {
-          model.addLinkData(linkData);
-          console.log('Enlace creado:', model.linkDataArray);
-        } catch (error) {
-          console.error('Error al agregar el enlace:', error);
-        }
+        this.serverService.emitCreateRelationship(relationshipData);
       } else {
         console.error('No se encontraron los nodos de origen o destino.');
       }
@@ -735,38 +834,17 @@ export class RoomsComponent implements OnInit {
     console.log('To Class ID:', toClassId);
 
     if (fromClassId && toClassId) {
-      const fromNode = this.diagram.findNodeForKey(Number(fromClassId));
-      const toNode = this.diagram.findNodeForKey(Number(toClassId));
-
-      if (fromNode && toNode) {
-        const fromPortPos = fromNode
-          .findPort('T')
-          .getDocumentPoint(go.Spot.Center); // Puerto 'T' para Top
-        const toPortPos = toNode.findPort('B').getDocumentPoint(go.Spot.Center); // Puerto 'B' para Bottom
-
-        const linkData = {
-          from: Number(fromClassId),
-          to: Number(toClassId),
-          fromPort: `${fromPortPos.x},${fromPortPos.y}`,
-          toPort: `${toPortPos.x},${toPortPos.y}`,
-          routing: go.Routing.Orthogonal,
-          text: 'Asociación directa', // Etiqueta del enlace
-          multiplicityFrom: multiplicityFrom || '',
-          multiplicityTo: multiplicityTo || '',
-          toArrow: 'OpenTriangle',
-          relationType: 'Association Direct',
-        };
-
-        const model = this.diagram.model as go.GraphLinksModel;
-        try {
-          model.addLinkData(linkData);
-          console.log('Enlace creado:', model.linkDataArray);
-        } catch (error) {
-          console.error('Error al agregar el enlace:', error);
-        }
-      } else {
-        console.error('No se encontraron los nodos de origen o destino.');
-      }
+      // Utilizamos el método centralizado para manejar la agregación
+      this.createRelationship(
+        fromClassId,
+        toClassId,
+        '1',
+        '1',
+        'AssociationDirect', // Tipo de relación
+        'OpenTriangle', // Flecha de agregación
+        '', // Relleno del diamante transparente
+        'Asociación Directa' // Etiqueta visible para el enlace
+      );
     } else {
       alert('Por favor, seleccione las clases de origen y destino.');
     }
@@ -779,7 +857,6 @@ export class RoomsComponent implements OnInit {
     this.firstSelectedNode = null;
     console.log('Modo de generalización activado. Selecciona dos nodos.');
   }
-
   // Método que maneja los clics en los nodos en modo de generalización
   handleGeneralizationNodeClick(node: go.Node) {
     if (!this.firstSelectedNode) {
@@ -814,39 +891,17 @@ export class RoomsComponent implements OnInit {
     console.log('To Class ID:', toClassId);
 
     if (fromClassId && toClassId) {
-      const fromNode = this.diagram.findNodeForKey(Number(fromClassId));
-      const toNode = this.diagram.findNodeForKey(Number(toClassId));
-
-      if (fromNode && toNode) {
-        const fromPortPos = fromNode
-          .findPort('T')
-          .getDocumentPoint(go.Spot.Center); // Puerto 'T' para Top
-        const toPortPos = toNode.findPort('B').getDocumentPoint(go.Spot.Center); // Puerto 'B' para Bottom
-
-        const linkData = {
-          from: Number(fromClassId),
-          to: Number(toClassId),
-          fromPort: `${fromPortPos.x},${fromPortPos.y}`,
-          toPort: `${toPortPos.x},${toPortPos.y}`,
-          routing: go.Routing.Orthogonal,
-          text: 'Asociación directa', // Etiqueta del enlace
-          multiplicityFrom: multiplicityFrom || '',
-          multiplicityTo: multiplicityTo || '',
-          toArrow: 'RoundedTriangle',
-          fill: 'transparent',
-          relationType: 'Generalization',
-        };
-
-        const model = this.diagram.model as go.GraphLinksModel;
-        try {
-          model.addLinkData(linkData);
-          console.log('Enlace creado:', model.linkDataArray);
-        } catch (error) {
-          console.error('Error al agregar el enlace:', error);
-        }
-      } else {
-        console.error('No se encontraron los nodos de origen o destino.');
-      }
+      // Utilizamos el método centralizado para manejar la agregación
+      this.createRelationship(
+        fromClassId,
+        toClassId,
+        multiplicityFrom,
+        multiplicityTo,
+        'Generalization', // Tipo de relación
+        'RoundedTriangle', // Flecha de agregación
+        'transparent', // Relleno del diamante transparente
+        'Generalisacion' // Etiqueta visible para el enlace
+      );
     } else {
       alert('Por favor, seleccione las clases de origen y destino.');
     }
@@ -895,39 +950,17 @@ export class RoomsComponent implements OnInit {
     console.log('To Class ID:', toClassId);
 
     if (fromClassId && toClassId) {
-      const fromNode = this.diagram.findNodeForKey(Number(fromClassId));
-      const toNode = this.diagram.findNodeForKey(Number(toClassId));
-
-      if (fromNode && toNode) {
-        const fromPortPos = fromNode
-          .findPort('T')
-          .getDocumentPoint(go.Spot.Center); // Puerto 'T' para Top
-        const toPortPos = toNode.findPort('B').getDocumentPoint(go.Spot.Center); // Puerto 'B' para Bottom
-
-        const linkData = {
-          from: Number(fromClassId),
-          to: Number(toClassId),
-          fromPort: `${fromPortPos.x},${fromPortPos.y}`,
-          toPort: `${toPortPos.x},${toPortPos.y}`,
-          routing: go.Routing.Orthogonal,
-          text: 'Agregation', // Etiqueta del enlace
-          multiplicityFrom: multiplicityFrom || '',
-          multiplicityTo: multiplicityTo || '',
-          toArrow: 'StretchedDiamond',
-          fill: 'transparent',
-          relationType: 'Agregation',
-        };
-
-        const model = this.diagram.model as go.GraphLinksModel;
-        try {
-          model.addLinkData(linkData);
-          console.log('Enlace creado:', model.linkDataArray);
-        } catch (error) {
-          console.error('Error al agregar el enlace:', error);
-        }
-      } else {
-        console.error('No se encontraron los nodos de origen o destino.');
-      }
+      // Utilizamos el método centralizado para manejar la agregación
+      this.createRelationship(
+        fromClassId,
+        toClassId,
+        multiplicityFrom,
+        multiplicityTo,
+        'Agregacion', // Tipo de relación
+        'StretchedDiamond', // Flecha de agregación
+        'transparent', // Relleno del diamante transparente
+        'Agregación' // Etiqueta visible para el enlace
+      );
     } else {
       alert('Por favor, seleccione las clases de origen y destino.');
     }
@@ -975,38 +1008,17 @@ export class RoomsComponent implements OnInit {
     console.log('To Class ID:', toClassId);
 
     if (fromClassId && toClassId) {
-      const fromNode = this.diagram.findNodeForKey(Number(fromClassId));
-      const toNode = this.diagram.findNodeForKey(Number(toClassId));
-
-      if (fromNode && toNode) {
-        const fromPortPos = fromNode
-          .findPort('T')
-          .getDocumentPoint(go.Spot.Center); // Puerto 'T' para Top
-        const toPortPos = toNode.findPort('B').getDocumentPoint(go.Spot.Center); // Puerto 'B' para Bottom
-
-        const linkData = {
-          from: Number(fromClassId),
-          to: Number(toClassId),
-          fromPort: `${fromPortPos.x},${fromPortPos.y}`,
-          toPort: `${toPortPos.x},${toPortPos.y}`,
-          routing: go.Routing.Orthogonal,
-          text: 'Composition', // Etiqueta del enlace
-          multiplicityFrom: multiplicityFrom || '',
-          multiplicityTo: multiplicityTo || '',
-          toArrow: 'StretchedDiamond',
-          relationType: 'Composition',
-        };
-
-        const model = this.diagram.model as go.GraphLinksModel;
-        try {
-          model.addLinkData(linkData);
-          console.log('Enlace creado:', model.linkDataArray);
-        } catch (error) {
-          console.error('Error al agregar el enlace:', error);
-        }
-      } else {
-        console.error('No se encontraron los nodos de origen o destino.');
-      }
+      // Reutilizamos el mismo método para cualquier tipo de relación
+      this.createRelationship(
+        fromClassId,
+        toClassId,
+        multiplicityFrom,
+        multiplicityTo,
+        'Composition', // Tipo de relación
+        'StretchedDiamond', // Flecha específica para la agregación
+        '',
+        'composicion' // Etiqueta visible para el enlace
+      );
     } else {
       alert('Por favor, seleccione las clases de origen y destino.');
     }
@@ -1045,56 +1057,7 @@ export class RoomsComponent implements OnInit {
     }
   }
   // Método para crear la relación de dependencia
-createDependency(
-  fromClassId: string | null,
-  toClassId: string | null,
-  multiplicityFrom: string,
-  multiplicityTo: string
-): void {
-  console.log('From Class ID:', fromClassId);
-  console.log('To Class ID:', toClassId);
-
-  if (fromClassId && toClassId) {
-    const fromNode = this.diagram.findNodeForKey(Number(fromClassId));
-    const toNode = this.diagram.findNodeForKey(Number(toClassId));
-
-    if (fromNode && toNode) {
-      const fromPortPos = fromNode
-        .findPort('T')
-        .getDocumentPoint(go.Spot.Center); // Puerto 'T' para Top
-      const toPortPos = toNode.findPort('B').getDocumentPoint(go.Spot.Center); // Puerto 'B' para Bottom
-
-      const linkData = {
-        from: Number(fromClassId),
-        to: Number(toClassId),
-        fromPort: `${fromPortPos.x},${fromPortPos.y}`,
-        toPort: `${toPortPos.x},${toPortPos.y}`,
-        routing: go.Routing.Orthogonal,
-        text: 'Dependencia', // Etiqueta del enlace
-        multiplicityFrom: multiplicityFrom || '',
-        multiplicityTo: multiplicityTo || '',
-        toArrow: 'OpenTriangle', // Flecha para dependencia
-        relationType: 'Dependency',
-      };
-
-      const model = this.diagram.model as go.GraphLinksModel;
-      try {
-        model.addLinkData(linkData);
-        console.log('Enlace de dependencia creado:', model.linkDataArray);
-      } catch (error) {
-        console.error('Error al agregar el enlace:', error);
-      }
-    } else {
-      console.error('No se encontraron los nodos de origen o destino.');
-    }
-  } else {
-    alert('Por favor, seleccione las clases de origen y destino.');
-  }
-}
-
-
-  //Muchos a Muchos
-  createManyToMany(
+  createDependency(
     fromClassId: string | null,
     toClassId: string | null,
     multiplicityFrom: string,
@@ -1104,46 +1067,257 @@ createDependency(
     console.log('To Class ID:', toClassId);
 
     if (fromClassId && toClassId) {
-      const model = this.diagram.model as go.GraphLinksModel;
-
-      //Crear el enlace principal entre las clases de origen y destino
-      const mainLinkData = {
-        from: Number(fromClassId),
-        to: Number(toClassId),
-        routing: go.Routing.Orthogonal,
-        text: '',
-        toArrow: '',
-      };
-
-      // Añadir el enlace principal
-      model.addLinkData(mainLinkData);
-      const lastLink = model.linkDataArray[model.linkDataArray.length - 1];
-
-      //Clase Intermedia
-      const intermediateClass = {
-        key: model.nodeDataArray.length + 1,
-        name: 'TablaIntermedia',
-        attributes: [],
-        methods: [],
-        loc: '250 150', // Posición inicial del nodo intermedio
-      };
-
-      //Añadir el nodo intermedio al modelo
-      model.addNodeData(intermediateClass);
-
-      /*//Crear un enlace punteado desde el puerto en el centro del enlace principal hasta la tabla intermedia
-      const midPointLinkData = {
-        from: mainLinkData,  // Enlaza desde el puerto en el centro del enlace
-        fromPort: "midPoint",  // Puerto en el centro del enlace principal
-        to: intermediateClass.key,  // Tabla intermedia
-        routing: go.Routing.Orthogonal,
-        text: ""
-      };
-
-      // ñadir el enlace punteado entre el puerto central del enlace y la tabla intermedia
-      model.addLinkData(midPointLinkData);*/
+      this.createRelationship(
+        fromClassId,
+        toClassId,
+        multiplicityFrom,
+        multiplicityTo,
+        'Dependency', // Tipo de relación
+        'OpenTriangle', // Flecha para dependencia
+        'black', // Relleno de la flecha
+        'Dependencia', // Etiqueta visible
+        [4, 2] // Patrón de guiones para una línea discontinua
+      );
     } else {
       alert('Por favor, seleccione las clases de origen y destino.');
     }
+  }
+
+  //Muchos a Muchos
+  // Método para activar el modo de muchos a muchos
+  enableManyToManyMode() {
+    this.isManyToManyMode = true;
+    this.firstSelectedNode = null;
+    this.secondSelectedNode = null;
+    console.log('Modo muchos a muchos activado. Selecciona dos nodos.');
+  }
+  // Método que maneja los clics en los nodos en modo muchos a muchos
+  handleManyToManyNodeClick(node: go.Node) {
+    if (!this.firstSelectedNode) {
+      // Selecciona el primer nodo
+      this.firstSelectedNode = node;
+      console.log('Primer nodo seleccionado:', node.data.key);
+    } else if (!this.secondSelectedNode) {
+      // Selecciona el segundo nodo
+      this.secondSelectedNode = node;
+      console.log('Segundo nodo seleccionado:', node.data.key);
+
+      // Llamar a la función createManyToMany con los IDs y nombres de las dos clases
+      this.createManyToMany(
+        this.firstSelectedNode.data.key.toString(),
+        this.secondSelectedNode.data.key.toString(),
+        this.firstSelectedNode.data.name, // Usamos los nombres de las clases
+        this.secondSelectedNode.data.name,
+        '', // Multiplicidad del origen
+        '' // Multiplicidad del destino
+      );
+
+      // Reiniciar el modo de muchos a muchos
+      this.isManyToManyMode = false;
+      this.firstSelectedNode = null;
+      this.secondSelectedNode = null;
+    }
+  }
+
+  // Método para crear una relación muchos a muchos
+  createManyToMany(
+    fromClassId: string | null,
+    toClassId: string | null,
+    fromClassName: string,
+    toClassName: string,
+    multiplicityFrom: string,
+    multiplicityTo: string
+  ): void {
+    console.log('From Class ID:', fromClassId);
+    console.log('To Class ID:', toClassId);
+
+    if (fromClassId && toClassId) {
+      const model = this.diagram.model as go.GraphLinksModel;
+
+      // Crear la tabla intermedia utilizando los nombres de las clases seleccionadas
+      const intermediateClassName = `${fromClassName}_${toClassName}`;
+      const intermediateClass = {
+        key: model.nodeDataArray.length + 1,
+        name: intermediateClassName, // Nombre basado en las clases seleccionadas
+        attributes: [],
+        methods: [],
+        location: '200 200', // Posición inicial de la tabla intermedia
+      };
+
+      // Crear los enlaces desde y hacia la tabla intermedia
+      const fromIntermediateLinkData = {
+        from: Number(fromClassId),
+        to: intermediateClass.key,
+        routing: go.Routing.Orthogonal,
+        text: 'ManyToMany',
+        toArrow: 'OpenTriangle',
+        multiplicityFrom: multiplicityFrom || '1',
+        multiplicityTo: 'n',
+        relationType: 'ManyToMany',
+      };
+
+      const toIntermediateLinkData = {
+        from: Number(toClassId),
+        to: intermediateClass.key,
+        routing: go.Routing.Orthogonal,
+        text: 'ManyToMany',
+        toArrow: 'OpenTriangle',
+        multiplicityFrom: multiplicityFrom || '1',
+        multiplicityTo: 'n',
+        relationType: 'ManyToMany',
+      };
+
+      // Emitir los eventos de creación de la tabla intermedia y sus enlaces al servidor
+      this.serverService.emitCreateManyToMany({
+        roomCode: this.roomCode,
+        intermediateClass: intermediateClass,
+        fromIntermediateLinkData: fromIntermediateLinkData,
+        toIntermediateLinkData: toIntermediateLinkData,
+      });
+
+      console.log(
+        'Relación muchos a muchos creada con la clase intermedia:',
+        intermediateClassName
+      );
+    } else {
+      alert('Por favor, seleccione las clases de origen y destino.');
+    }
+  }
+  //-------------------------------------------------------------------------------------------------
+
+  exportDiagramAsXML() {
+    // Obtener el estado actual del diagrama como JSON
+    const diagramJSON = this.diagram.model.toJson();
+
+    // Convertir el JSON a XML
+    const xml = this.convertJSONToXML(JSON.parse(diagramJSON));
+
+    // Crear un Blob para el XML
+    const blob = new Blob([xml], { type: 'application/xml' });
+
+    // Crear un enlace de descarga
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'diagram.xml';
+
+    // Simular clic en el enlace para iniciar la descarga
+    link.click();
+  }
+
+  convertJSONToXML(json: any) {
+    let xml = '<diagram>\n';
+
+    // Recorrer nodos (clases)
+    if (json.nodeDataArray) {
+      xml += '<nodes>\n';
+      json.nodeDataArray.forEach((node: any) => {
+        xml += `  <node id="${node.key}" name="${node.name}" location="${node.location.x},${node.location.y}">\n`;
+        xml += '    <attributes>\n';
+        (node.attributes || []).forEach((attr: any) => {
+          xml += `      <attribute name="${attr.name}" />\n`;
+        });
+        xml += '    </attributes>\n';
+        xml += '    <methods>\n';
+        (node.methods || []).forEach((method: any) => {
+          xml += `      <method name="${method.name}" />\n`;
+        });
+        xml += '    </methods>\n';
+        xml += '  </node>\n';
+      });
+      xml += '</nodes>\n';
+    }
+
+    // Recorrer enlaces (relaciones)
+    if (json.linkDataArray) {
+      xml += '<links>\n';
+      json.linkDataArray.forEach((link: any) => {
+        xml += `  <link from="${link.from}" to="${link.to}" type="${link.relationType}" />\n`;
+      });
+      xml += '</links>\n';
+    }
+
+    xml += '</diagram>';
+    return xml;
+  }
+
+  importDiagramFromXML(event: any) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const xml = reader.result as string;
+
+      // Convertir el XML a JSON
+      const json = this.convertXMLToJSON(xml);
+
+      // Cargar el JSON en el modelo del diagrama
+      const model = go.Model.fromJson(JSON.stringify(json));
+      this.diagram.model = model;
+
+      // Emitir el evento de sincronización con el servidor si es necesario
+      this.serverService.emitSaveDiagram({
+        roomCode: this.roomCode,
+        diagramData: JSON.stringify(json),
+      });
+    };
+    reader.readAsText(file);
+  }
+
+  convertXMLToJSON(xml: string): any {
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(xml, 'application/xml');
+
+    const json: any = {
+      nodeDataArray: [],
+      linkDataArray: [],
+    };
+
+    // Convertir nodos
+    const nodes = xmlDoc.getElementsByTagName('node');
+    for (const node of Array.from(nodes)) {
+      const attributes: any[] = [];
+      const methods: any[] = [];
+
+      const attrElements = node.getElementsByTagName('attribute');
+      for (const attr of Array.from(attrElements)) {
+        attributes.push({ name: attr.getAttribute('name') });
+      }
+
+      const methodElements = node.getElementsByTagName('method');
+      for (const method of Array.from(methodElements)) {
+        methods.push({ name: method.getAttribute('name') });
+      }
+
+      const location = node.getAttribute('location')?.split(',');
+      const point =
+        location && location.length === 2
+          ? new go.Point(parseFloat(location[0]), parseFloat(location[1]))
+          : new go.Point(0, 0); // Si no hay ubicación, usar (0, 0) como valor por defecto.
+
+      json.nodeDataArray.push({
+        key: node.getAttribute('id'),
+        name: node.getAttribute('name'),
+        attributes: attributes,
+        methods: methods,
+        location: point, // Usamos el punto calculado o un valor por defecto
+      });
+    }
+
+    // Convertir enlaces
+    const links = xmlDoc.getElementsByTagName('link');
+    for (const link of Array.from(links)) {
+      json.linkDataArray.push({
+        from: link.getAttribute('from'),
+        to: link.getAttribute('to'),
+        relationType: link.getAttribute('type'),
+      });
+    }
+
+    return json;
+  }
+
+  triggerFileInput() {
+    this.fileInput.nativeElement.click();
   }
 }

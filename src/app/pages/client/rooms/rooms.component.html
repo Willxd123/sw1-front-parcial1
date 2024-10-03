@@ -1,6 +1,15 @@
 <div class="flex min-h-screen bg-gray-600">
   <!-- oyente del sidebar -->
-  <app-sidebar (addClassEvent)="addClass()"></app-sidebar>
+  <app-sidebar
+    (addClassEvent)="addClass()"
+    (asociacionEvent)="enableAssociationMode()"
+    (asociacionDirectaEvent)="enableDirectAssociationMode()"
+    (generalizacionEvent)="enableGeneralizationMode()"
+    (agregacionEvent)="enableAggregationMode()"
+    (composicionEvent)="enableCompositionMode()"
+    (dependenciaEvent)="enableDependencyMode()"
+    (muchosamuchosEvent)="enableManyToManyMode()"
+  ></app-sidebar>
   <div class="p-4 xl:ml-64 w-full">
     <nav
       class="block w-full max-w-full bg-transparent text-white shadow-none rounded-xl transition-all px-0 py-1"
@@ -8,76 +17,14 @@
       <app-navegation />
     </nav>
     <!-- Contenedor de Relaciones -->
-    <button
-      class="middle none font-sans font-bold center transition-all disabled:opacity-50 disabled:shadow-none disabled:pointer-events-none text-xs py-3 rounded-lg text-white hover:bg-white/10 active:bg-white/30 w-full flex items-center gap-4 px-4 capitalize"
-      type="button"
-      (click)="enableAssociationMode()"
-    >
-      <img src="assets/images/asoci.png" alt="" class="w-7" />
-      <p
-        class="block antialiased font-sans text-base leading-relaxed text-inherit font-medium capitalize"
-      >
-        Asociación
-      </p>
-    </button>
-    <button
-      class="middle none font-sans font-bold center transition-all disabled:opacity-50 disabled:shadow-none disabled:pointer-events-none text-xs py-3 rounded-lg text-white hover:bg-white/10 active:bg-white/30 w-full flex items-center gap-4 px-4 capitalize"
-      type="button"
-      (click)="enableDirectAssociationMode()"
-    >
-      <img src="assets/images/agre.png" alt="" class="w-7" />
-      <p
-        class="block antialiased font-sans text-base leading-relaxed text-inherit font-medium capitalize"
-      >
-        Asociación Directa
-      </p>
-    </button>
-    <button
-      class="middle none font-sans font-bold center transition-all disabled:opacity-50 disabled:shadow-none disabled:pointer-events-none text-xs py-3 rounded-lg text-white hover:bg-white/10 active:bg-white/30 w-full flex items-center gap-4 px-4 capitalize"
-      type="button"
-      (click)="enableGeneralizationMode()"
-    >
-      <img src="assets/images/genera.png" alt="" class="w-7" />
-      <p
-        class="block antialiased font-sans text-base leading-relaxed text-inherit font-medium capitalize"
-      >
-        Generalización
-      </p>
-    </button>
-    <button
-      class="middle none font-sans font-bold center transition-all disabled:opacity-50 disabled:shadow-none disabled:pointer-events-none text-xs py-3 rounded-lg text-white hover:bg-white/10 active:bg-white/30 w-full flex items-center gap-4 px-4 capitalize"
-      type="button"
-      (click)="enableAggregationMode()"
-    >
-      <img src="assets/images/agre.png" alt="" class="w-7" />
-      <p
-        class="block antialiased font-sans text-base leading-relaxed text-inherit font-medium capitalize"
-      >
-        Agregación
-      </p>
-    </button>
-    <button
-      class="middle none font-sans font-bold center transition-all disabled:opacity-50 disabled:shadow-none disabled:pointer-events-none text-xs py-3 rounded-lg text-white hover:bg-white/10 active:bg-white/30 w-full flex items-center gap-4 px-4 capitalize"
-      type="button"
-      (click)="enableCompositionMode()"
-    >
-      <img src="assets/images/compo.png" alt="" class="w-7" />
-      <p
-        class="block antialiased font-sans text-base leading-relaxed text-inherit font-medium capitalize"
-      >
-        Composición
-      </p>
-    </button>
-    <button
-  class="middle none font-sans font-bold center transition-all disabled:opacity-50 disabled:shadow-none disabled:pointer-events-none text-xs py-3 rounded-lg text-white hover:bg-white/10 active:bg-white/30 w-full flex items-center gap-4 px-4 capitalize"
-  type="button"
-  (click)="enableDependencyMode()"
->
-  <img src="assets/images/depen.png" alt="" class="w-7" />
-  <p class="block antialiased font-sans text-base leading-relaxed text-inherit font-medium capitalize">
-    Dependencia
-  </p>
-</button>
+    <div>
+      <!-- Botón para exportar el diagrama actual -->
+      <button (click)="exportDiagramAsXML()">Exportar Diagrama</button>
+
+      <!-- Botón para importar un diagrama -->
+      <input type="file" #fileInput (change)="importDiagramFromXML($event)" style="display: none;" />
+      <button (click)="triggerFileInput()">Importar Diagrama</button>
+    </div>
 
     <div class="mt-4">
       <div class="card" #diagramDiv id="diagramDiv">
@@ -89,16 +36,6 @@
     class="bg-graygreen-1100 z-40 w-[400px] h-screen transition-transform -translate-x-full sm:translate-x-0"
   >
     <div class="h-full px-3 pb-4 overflow-y-auto space-y-4">
-      <div class="relative border-b">
-        <div class="flex flex-col items-start py-2 px-8">
-          <h1
-            class="block antialiased tracking-normal font-sans text-base font-semibold leading-relaxed text-white"
-          >
-            {{ selectedClass?.name || "Selecciona una clase" }}
-          </h1>
-        </div>
-      </div>
-
       <ul class="mb-8 flex flex-col gap-1">
         <li class="space-y-4 border-b">
           <div class="flex items-center px-2">

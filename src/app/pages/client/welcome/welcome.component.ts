@@ -33,7 +33,7 @@ export class WelcomeComponent {
 
     this.apiService.createRoom(createRoomDto).subscribe({
       next: (room) => {
-      
+
         this.router.navigate([`/room/${room.code}`]); // Redirige a la sala
       },
       error: (err) => {
@@ -60,8 +60,5 @@ export class WelcomeComponent {
       }
     });
   }
-  /* joinRoom() {
-    this.serverService.joinRoom(this.roomCode); // Solo navega al room, sin suscripción
-    this.router.navigate([`/room/${this.roomCode}`]); // Redirige a la sala
-  } */
+
 }
